@@ -2,6 +2,8 @@ import exports
 from boto3 import client
 from slack_sdk import WebClient
 
+import notion_helper
+
 logs_file_name  = "logs.txt"
 
 
@@ -47,3 +49,4 @@ def main():
 
 if __name__ == "__main__":
   main()
+  notion_helper.create_a_page()
