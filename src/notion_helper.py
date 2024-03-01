@@ -2,6 +2,8 @@ import exports
 import requests
 import json
 from boto3 import client
+import time
+from typing import List
 
 headers = {
     "Authorization": f"Bearer {exports.notion_token}",
@@ -10,22 +12,28 @@ headers = {
 }
 
 
-def build_page(date: str, log_id: str, file_url: str):
+def build_page(date: str, log_id: str, list_page_content_strings: List[str]):
+    
+    children = []
+    for item in list_page_content_strings:
+        children.append({
+                "object": "block",
+                "type": "paragraph",
+                "paragraph": {
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {
+                                "content": item
+                            },
+                        }
+                    ]
+                },
+            }
+        )
     return {
         "parent": {"database_id": exports.notion_db_id},
         "properties": {
-            "Logs": {
-                "type": "files",
-                "files": [
-                    {
-                        "type": "external",
-                        "name": "Example file",
-                        "external": {
-                            "url": file_url
-                        },
-                    }
-                ],
-            },
             "Date": {
                 "type": "rich_text",
                 "rich_text": [
@@ -54,6 +62,7 @@ def build_page(date: str, log_id: str, file_url: str):
                 ],
             },
         },
+        "children": children,
     }
 
 
@@ -68,12 +77,17 @@ def get_table_data():
 
 def create_a_page():
     url = "https://api.notion.com/v1/pages"
-    s3_client = client('s3',region_name=exports.aws_region_name)
-    logs_file_name = "logs.txt"
-    with open(logs_file_name, "rb") as logs_file:
-      upload_response = s3_client.upload_fileobj(logs_file, exports.s3_bucket_name , logs_file_name)
+        
+    id = int(time.time())
+    log_lines = []
     
-    file_url = f"https://{exports.s3_bucket_name}.s3.{exports.aws_region_name}.amazonaws.com/{logs_file_name}"
-    body = build_page("2024-02-14", "some-weird-id",file_url)
+    with open("logs.txt", "r") as logs_content:
+        log_lines = logs_content.readlines()
+    
+    body = build_page(
+        date = "2024-02-14",
+        log_id = f"{id}", 
+        list_page_content_strings = log_lines
+    )
     response = requests.post(url, data=json.dumps(body), headers=headers)
     print(response.text)

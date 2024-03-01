@@ -31,7 +31,7 @@ def send_message_to_slack():
   )
   response = slack.chat_postMessage(
     channel = exports.slack_channel_name,
-    text    = "Hello world"
+    text    = "Salesforce <> Notion Execution Logs for 14/02/2024 are as below"
   )
   print(response)
   
